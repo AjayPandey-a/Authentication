@@ -38,21 +38,16 @@ app.get('/login', (req,res)=>{
     res.render('login')
 });
 app.post('/login', async (req, res)=>{
-    const { identifier, password } = req.body;
-    if (!identifier || !password) {
-        return res.status(400).send("Username/email and password are required");
-    }
-
-    let user = await userModel.findOne({
-        $or: [{ email: identifier }, { username: identifier }]
-    });
+    let user = await userModel.findOne({email: req.body.email});
     if(!user) return res.send("User Not Found");
-    const passwordMatches = await bcrypt.compare(password, user.password);
-    if (!passwordMatches) return res.send("Login Failed");
-
-    let token = jwt.sign({email: user.email}, "sssss");
-    res.cookie("token", token);
-    res.send("Login Success");
+    bcrypt.compare(req.body.password, user.password, function(err, result){
+        if(result){
+            let token = jwt.sign({email: user.email}, "sssss");
+            res.cookie("token", token);
+             res.send("Login Success");
+        }
+        else res.send("Login Failed");
+    })
 })
 app.get('/logout', (req, res)=>{
     res.cookie('token', "");
